@@ -5,7 +5,7 @@ RUN go mod download
 COPY . /app/
 RUN CGO_ENABLED=0 go build -o web-hooker .
 
-FROM scratch
+FROM alpine:3.13
 WORKDIR /app
 COPY --from=builder /app/web-hooker /app/
 EXPOSE 8080
