@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/http/cgi"
@@ -58,8 +59,10 @@ func main() {
 
 	log.Printf("Start server on port %s", port)
 	go func() {
-		errCh <- server.ListenAndServe()
-		defer close(errCh)
+		err := server.ListenAndServe()
+		if err != http.ErrServerClosed {
+			errCh <- err
+		}
 	}()
 
 	select {
@@ -67,6 +70,10 @@ func main() {
 		log.Fatalf("Server error, terminating: %+v", err)
 	case sig := <-sigCh:
 		log.Printf("Normal shutdown by signal: %+v", sig)
+	}
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		log.Fatalf("Stopping server: %+v", err)
 	}
 
 	os.Exit(0)
