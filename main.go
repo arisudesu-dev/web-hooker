@@ -53,28 +53,23 @@ func main() {
 	server.Addr = ":" + port
 	server.Handler = &CGIHandler{ScriptsDir: scriptsDir}
 
-	errCh := make(chan error)
+	brkCh := make(chan struct{})
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	log.Printf("Start server on port %s", port)
 	go func() {
-		err := server.ListenAndServe()
-		if err != http.ErrServerClosed {
-			errCh <- err
-		}
+		log.Printf("Signal received: %+v", <-sigCh)
+		_ = server.Shutdown(context.Background())
+		close(brkCh)
 	}()
 
-	select {
-	case err := <-errCh:
+	log.Printf("Start server on port %s", port)
+
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("Server error, terminating: %+v", err)
-	case sig := <-sigCh:
-		log.Printf("Normal shutdown by signal: %+v", sig)
 	}
 
-	if err := server.Shutdown(context.Background()); err != nil {
-		log.Fatalf("Stopping server: %+v", err)
-	}
-
+	log.Printf("Waiting for server shutdown...")
+	<-brkCh
 	os.Exit(0)
 }
