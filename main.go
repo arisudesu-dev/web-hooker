@@ -16,32 +16,52 @@ type CGIHandler struct {
 	ScriptsDir string
 }
 
-func (c CGIHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	// strip leading '/' and combine with scripts path
-	scriptPath := path.Join(c.ScriptsDir, req.URL.Path[1:])
+func (c CGIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	scriptPath := c.cleanPath(r.URL.Path)
 
-	// check if:
-	//   scriptPath is inside scriptsDir;
-	//   scriptPath is not empty;
-	//   scriptPath is a file (doesn't end with '/')
-	if !strings.HasPrefix(scriptPath, c.ScriptsDir) ||
-		strings.TrimPrefix(scriptPath, c.ScriptsDir) == "" ||
-		strings.HasSuffix(scriptPath, "/") {
-		rw.WriteHeader(http.StatusBadRequest)
+	if strings.HasSuffix(scriptPath, "/") {
+		c.statusError(w, http.StatusForbidden)
+		return
+	}
+
+	scriptFile := c.ScriptsDir + scriptPath
+
+	stat, err := os.Stat(scriptFile)
+	if err != nil || stat.IsDir() {
+		c.statusError(w, http.StatusNotFound)
 		return
 	}
 
 	cgiHandler := cgi.Handler{
-		Path: scriptPath,
+		Root: scriptPath,
+		Path: scriptFile,
 		Dir:  c.ScriptsDir,
 	}
-	cgiHandler.ServeHTTP(rw, req)
+	cgiHandler.ServeHTTP(w, r)
+}
+
+func (c CGIHandler) cleanPath(p string) string {
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+
+	if strings.HasSuffix(p, "/") && np != "/" {
+		np += "/"
+	}
+	return np
+}
+
+func (c CGIHandler) statusError(w http.ResponseWriter, statusCode int) {
+	statusText := http.StatusText(statusCode)
+	w.WriteHeader(statusCode)
+	w.Write([]byte(statusText))
 }
 
 func main() {
-	scriptsDir, ok := os.LookupEnv("SCRIPTS_DIR")
-	if !ok {
-		scriptsDir = "/"
+	scriptsDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Cannot obtain current working directory: %+v", err)
 	}
 
 	port, ok := os.LookupEnv("PORT")

@@ -10,7 +10,7 @@ Configuration is done with environment variables.
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
 | PORT | 8000 | TCP port to listen |
-| SCRIPTS_DIR | / | Directory containing launched scripts |
+| SCRIPTS_DIR | current working directory | Directory containing launched scripts |
 
 ## Usage example
 
