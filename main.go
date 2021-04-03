@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -17,18 +18,25 @@ type CGIHandler struct {
 }
 
 func (c CGIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[REQ] %+v", r.URL)
+
 	scriptPath := c.cleanPath(r.URL.Path)
 
 	if strings.HasSuffix(scriptPath, "/") {
-		c.statusError(w, http.StatusForbidden)
+		if err := c.statusError(w, http.StatusForbidden); err != nil {
+			log.Printf("[ERR] %+v", err)
+		}
 		return
 	}
 
-	scriptFile := c.ScriptsDir + scriptPath
+	scriptFile := filepath.FromSlash(c.ScriptsDir + scriptPath)
+	log.Printf("[INF] %+v => %+v", r.URL, scriptFile)
 
 	stat, err := os.Stat(scriptFile)
 	if err != nil || stat.IsDir() {
-		c.statusError(w, http.StatusNotFound)
+		if err := c.statusError(w, http.StatusNotFound); err != nil {
+			log.Printf("[ERR] %+v", err)
+		}
 		return
 	}
 
@@ -52,10 +60,11 @@ func (c CGIHandler) cleanPath(p string) string {
 	return np
 }
 
-func (c CGIHandler) statusError(w http.ResponseWriter, statusCode int) {
+func (c CGIHandler) statusError(w http.ResponseWriter, statusCode int) error {
 	statusText := http.StatusText(statusCode)
 	w.WriteHeader(statusCode)
-	w.Write([]byte(statusText))
+	_, err := w.Write([]byte(statusText))
+	return err
 }
 
 func main() {
