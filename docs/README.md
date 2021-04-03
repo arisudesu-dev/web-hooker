@@ -13,14 +13,14 @@ Configuration is done with environment variables.
 
 ## Usage example
 
-Start server at directory with scripts:
+Start server at the directory with examples:
 ```shell
 go build -o web-hooker
-pushd scripts && ../web-hooker
+pushd examples && ../web-hooker
 ```
 
-Request to run $CWD/execute_hook.sh as CGI script.
+Request to run examples/test.sh as CGI script.
 
 ```shell
-curl -X POST http://localhost:8000/execute_hook.sh
+curl -X POST http://localhost:8000/test.sh
 ```
