@@ -9,7 +9,7 @@ Configuration is done with environment variables.
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
-| PORT | 8000 | TCP port to listen |
+| PORT | 8080 | TCP port to listen |
 
 ## Usage example
 
@@ -22,5 +22,5 @@ pushd examples && ../web-hooker
 Request to run examples/test.sh as CGI script.
 
 ```shell
-curl -X POST http://localhost:8000/test.sh
+curl -X POST http://localhost:8080/test.sh
 ```

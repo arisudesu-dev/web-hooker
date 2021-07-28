@@ -75,7 +75,7 @@ func main() {
 
 	port, ok := os.LookupEnv("PORT")
 	if !ok {
-		port = "8000"
+		port = "8080"
 	}
 
 	server := http.Server{}
